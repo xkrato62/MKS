@@ -73,39 +73,39 @@ void tlacitka(void) {
 	//pushbutton s1
 	static uint16_t debounce_s1 = 0xFFFF;
 
-		debounce_s1 <<= 1;
-		uint32_t shift = LL_GPIO_IsInputPinSet(S1_GPIO_Port, S1_Pin);
-		if (shift) {
-			debounce_s1 |= 0x0001;
-		}
-		if (debounce_s1 == 0x7FFF) {
-			off_time = Tick + LED_TIME_LONG;
-			LL_GPIO_SetOutputPin(LED2_GPIO_Port,LED2_Pin);
-		}
-
-		// pushbutton s2
-		static uint16_t debounce_s2 = 0xFFFF;
-		debounce_s2 <<= 1;
-		uint32_t shift2 = LL_GPIO_IsInputPinSet(s2_GPIO_Port, s2_Pin);
-		if (shift2) {
-			debounce_s2 |= 0x0001;
-		}
-		if (debounce_s2 == 0x7FFF) {
-			off_time = Tick + LED_TIME_SHORT;
-			LL_GPIO_SetOutputPin(LED2_GPIO_Port,LED2_Pin);
-		}
+	debounce_s1 <<= 1;
+	uint32_t shift = LL_GPIO_IsInputPinSet(S1_GPIO_Port, S1_Pin);
+	if (shift) {
+		debounce_s1 |= 0x0001;
+	}
+	if (debounce_s1 == 0x7FFF) {
+		off_time = Tick + LED_TIME_LONG;
+		LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);
 	}
 
-	void volac(void) {
-		static uint32_t delay_2;
+	// pushbutton s2
+	static uint16_t debounce_s2 = 0xFFFF;
+	debounce_s2 <<= 1;
+	uint32_t shift2 = LL_GPIO_IsInputPinSet(s2_GPIO_Port, s2_Pin);
+	if (shift2) {
+		debounce_s2 |= 0x0001;
+	}
+	if (debounce_s2 == 0x7FFF) {
+		off_time = Tick + LED_TIME_SHORT;
+		LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);
+	}
+}
 
-		if (Tick > delay_2 + DELAY_DEBOUNCE) {
-			tlacitka();
-			delay_2 = Tick;
-			if (Tick > off_time) {
-				LL_GPIO_ResetOutputPin(LED2_GPIO_Port,LED2_Pin);
-			}
+void volac(void) {
+	static uint32_t delay_2;
+
+	if (Tick > delay_2 + DELAY_DEBOUNCE) {
+		tlacitka();
+		delay_2 = Tick;
+		if (Tick > off_time) {
+			LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
 		}
+	}
 
 }
 
