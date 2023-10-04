@@ -34,6 +34,7 @@ extern volatile uint32_t Tick;
 #define LED_TIME_BLINK 300
 #define LED_TIME_SHORT 100
 #define LED_TIME_LONG 1000
+#define DELAY_DEBOUNCE 5
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,6 +46,7 @@ extern volatile uint32_t Tick;
 
 /* USER CODE BEGIN PV */
 volatile uint32_t Tick;
+static uint32_t off_time;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,40 +60,54 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void blikac(void)
- {
- static uint32_t delay;
+void blikac(void) {
+	static uint32_t delay;
 
- if (Tick > delay + LED_TIME_BLINK) {
- LL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
- delay = Tick;
- }
- }
-
-
-void tlacitka(void)
- {
-	static uint32_t off_time;
-	static uint32_t old_s2;
-	uint32_t new_s2 = LL_GPIO_IsInputPinSet(s2_GPIO_Port, s2_Pin);
-	if (old_s2 && !new_s2) { // falling edge
-		off_time = Tick + LED_TIME_SHORT;
-		LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);
+	if (Tick > delay + LED_TIME_BLINK) {
+		LL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+		delay = Tick;
 	}
-	old_s2 = new_s2;
+}
 
-	static uint32_t old_s1;
-	uint32_t new_s1 = LL_GPIO_IsInputPinSet(S1_GPIO_Port, S1_Pin);
-	if (old_s1 && !new_s1) { // falling edge
-		off_time = Tick + LED_TIME_LONG;
-		LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);
+void tlacitka(void) {
+	//pushbutton s1
+	static uint16_t debounce_s1 = 0xFFFF;
+
+		debounce_s1 <<= 1;
+		uint32_t shift = LL_GPIO_IsInputPinSet(S1_GPIO_Port, S1_Pin);
+		if (shift) {
+			debounce_s1 |= 0x0001;
+		}
+		if (debounce_s1 == 0x7FFF) {
+			off_time = Tick + LED_TIME_LONG;
+			LL_GPIO_SetOutputPin(LED2_GPIO_Port,LED2_Pin);
+		}
+
+		// pushbutton s2
+		static uint16_t debounce_s2 = 0xFFFF;
+		debounce_s2 <<= 1;
+		uint32_t shift2 = LL_GPIO_IsInputPinSet(s2_GPIO_Port, s2_Pin);
+		if (shift2) {
+			debounce_s2 |= 0x0001;
+		}
+		if (debounce_s2 == 0x7FFF) {
+			off_time = Tick + LED_TIME_SHORT;
+			LL_GPIO_SetOutputPin(LED2_GPIO_Port,LED2_Pin);
+		}
 	}
-	old_s1 = new_s1;
 
-	if (Tick > off_time) {
-		LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
-	  }
- }
+	void volac(void) {
+		static uint32_t delay_2;
+
+		if (Tick > delay_2 + DELAY_DEBOUNCE) {
+			tlacitka();
+			delay_2 = Tick;
+			if (Tick > off_time) {
+				LL_GPIO_ResetOutputPin(LED2_GPIO_Port,LED2_Pin);
+			}
+		}
+
+}
 
 /* USER CODE END 0 */
 
@@ -134,8 +150,7 @@ int main(void)
   while (1)
   {
 	  blikac();
-	  tlacitka();
-
+	  volac();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
